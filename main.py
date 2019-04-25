@@ -25,6 +25,11 @@ def read_relations(db, openfile):
     """
     pass
 
+    reader = csv.DictReader(openfile, delimiter=',')
+    for row in reader:
+        db.execute('''insert into relations(product, location) values (?,?)''',(row['product'], row['location']))
+        db.commit()
+
 
 def read_locations(db, openfile):
     """Store the locations listed in the open file into the database
@@ -86,6 +91,8 @@ def main():
 
     # Write your code below
 
+    with open('relations.csv') as f:
+        read_relations(db, f)
 # Do not edit the code below
 if __name__=='__main__':
     main()
