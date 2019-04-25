@@ -25,10 +25,16 @@ def read_relations(db, openfile):
     """
     pass
 
-    reader = csv.DictReader(openfile, delimiter=',')
-    for row in reader:
-        db.execute('''insert into relations(product, location) values (?,?)''',(row['product'], row['location']))
-        db.commit()
+# delimiter - A delimiter is a sequence of one or more characters used to specify the boundary between separate,
+# independent regions in plain text or other data streams. Example of a delimiter is the comma character,
+# which acts as a field delimiter in a sequence of comma-separated values.
+
+    database = db
+
+    read_csv = csv.DictReader(openfile, delimiter=',')
+    for row in read_csv:
+        database.execute('''insert into relations(product, location) values (?,?)''',(row['product'], row['location']))
+        database.commit()
 
 
 def read_locations(db, openfile):
@@ -45,6 +51,14 @@ def read_locations(db, openfile):
     """
     pass
 
+    database = db
+
+    read_csv = csv.DictReader(openfile, delimiter=',')
+
+    for row in read_csv:
+        database.execute('''insert into locations values (?,?,?,?,?)''', (row['id'],row['number'],row['street'],row['city'],row['state']))
+        database.commit()
+
 
 def read_stock(db, openfile):
     """Read the products from the open file and store them in the database
@@ -60,6 +74,27 @@ def read_stock(db, openfile):
     """
     pass
 
+    database = db
+    html_parser = BeautifulSoup(openfile.read(), 'html.parser')
+    html_content = html_parser.find_all("div", class_="product")
+
+    for product in html_content:
+        parse_id = product.find_all("a")[0]
+        product_id = parse_id.attrs["href"].split('/')[-1]
+
+        product_description = parse_id.contents[0]
+
+        find_stock = product.find_all("div", class_="inventory")[0].contents[0]
+
+        stock_product = find_stock.split(' ')[0]
+
+        value = product.find_all("div", class_="cost")[0].contents[0]
+
+        revenue = value[0:1]
+        product_cost = value[1:]
+
+        database.execute('''insert into products values(?,?,?,?,?)''',(product_id,product_description,stock_product,product_cost,revenue))
+        database.commit()
 
 def report(db, openfile):
     """Generate a database report and store it in outfile
@@ -90,9 +125,17 @@ def main():
     create_tables(db)
 
     # Write your code below
+    database = db
 
     with open('relations.csv') as f:
-        read_relations(db, f)
+        read_relations(database, f)
+
+    with open('locations.csv') as f:
+        read_locations(database,f)
+
+    with open('index.html', encoding='utf-8') as f:
+        read_stock(database,f)
+
 # Do not edit the code below
 if __name__=='__main__':
     main()
