@@ -24,17 +24,24 @@ def read_relations(db, openfile):
     >>>    read_relations(db, f)
     """
     pass
-
-    # delimiter - A delimiter is a sequence of one or more characters used to specify the boundary between separate,
-    # independent regions in plain text or other data streams. Example of a delimiter is the comma character,
-    # which acts as a field delimiter in a sequence of comma-separated values.
+    # ----------------------------------------------------------------------------------------------------------------
+    # Delimiter - A delimiter is a sequence of one or more characters used to specify the boundary between separate, |
+    # independent regions in plain text or other data streams. Example of a delimiter is the comma character,        |
+    # which acts as a field delimiter in a sequence of comma-separated values.                                       |
+    # ----------------------------------------------------------------------------------------------------------------
 
     database = db
 
-    #reading the csv file.
+    # ----------------------
+    # reading the csv file.|
+    # ----------------------
+
     read_csv = csv.DictReader(openfile, delimiter=',')
 
-    # Inserting all the values of product and location into the database.
+    # --------------------------------------------------------------------
+    # Inserting all the values of product and location into the database.|
+    # --------------------------------------------------------------------
+
     for row in read_csv:
         database.execute('''insert into relations(product, location) values (?,?)''',(row['product'], row['location']))
         database.commit()
@@ -56,10 +63,16 @@ def read_locations(db, openfile):
 
     database = db
 
-    #reading the csv file.
+    # ----------------------
+    # reading the csv file.|
+    # ----------------------
+
     read_csv = csv.DictReader(openfile, delimiter=',')
 
-    # Inserting all the values of id, number, street, city and state into the database.
+    # ----------------------------------------------------------------------------------
+    # Inserting all the values of id, number, street, city and state into the database.|
+    # ----------------------------------------------------------------------------------
+
     for row in read_csv:
         database.execute('''insert into locations values (?,?,?,?,?)''', (row['id'],row['number'],row['street'],row['city'],row['state']))
         database.commit()
@@ -81,48 +94,74 @@ def read_stock(db, openfile):
 
     database = db
 
-    # Using beautifulsoup, parsing all the values of the HTML page and put it in html_parser.
+    # ----------------------------------------------------------------------------------------
+    # Using BeautifulSoup, parsing all the values of the HTML page and put it in html_parser.|
+    # ----------------------------------------------------------------------------------------
+
     html_parser = BeautifulSoup(openfile.read(), 'html.parser')
 
-    # Only selecting the product class which is in the DIV.
-    html_content = html_parser.find_all("div", class_="product")
+    # ------------------------------------------------------
+    # Only selecting the product class which is in the DIV.|
+    # ------------------------------------------------------
 
+    html_content = html_parser.find_all("div", class_="product")
 
     for product in html_content:
 
-        # Taking all the product number and using split, where discarding '/' in the href,
-        # only collecting the number which is at the end of the href link.
-        # For example, "a href="https://ilearn.mq.edu.au/product/0",
-        # In here getting all the 'a' and from there, discarding "https://ilearn.mq.edu.au/product/" this
-        # gives us the number for this example, it would be 0.
-        # -1 is indicating the array index where the '0' is stored.
+        # -------------------------------------------------------------------------------------------------
+        # Taking all the product number and using split, where discarding '/' in the href,                |
+        # only collecting the number which is at the end of the href link.                                |
+        # For example, "a href="https://ilearn.mq.edu.au/product/0",                                      |
+        # In here getting all the 'a' and from there, discarding "https://ilearn.mq.edu.au/product/" this |
+        # gives us the number for this example, it would be 0.                                            |
+        # -1 is indicating the array index where the '0' is stored.                                       |
+        # -------------------------------------------------------------------------------------------------
+
         parse_id_number = product.find_all("a")[0]
         product_id = parse_id_number.attrs["href"].split('/')[-1]
 
+        # ---------------------------------------------------------------------
+        # Taking the description of 'Ocean Blue Shirt' from the               |
+        # '<a href="https://ilearn.mq.edu.au/product/0">Ocean Blue Shirt</a>' |
+        # ---------------------------------------------------------------------
 
-        # Taking the description of 'Ocean Blue Shirt' from the
-        # '<a href="https://ilearn.mq.edu.au/product/0">Ocean Blue Shirt</a>'
         product_description = parse_id_number.contents[0]
 
-        # In the find_stock variable, storing all the data of inventory class in DIV.
-        # stock_product is storing the 0 index value and discard anything after ' ' or space.
-        # For example, in this line of code '<div class="inventory">0 in stock</div>',
-        # stock_product is storing only the value (0).
+        # --------------------------------------------------------------------------------------
+        # In the find_stock variable, storing all the data of inventory class in DIV.          |
+        # stock_product is storing the 0 index value and discard anything after ' ' or space.  |
+        # For example, in this line of code '<div class="inventory">0 in stock</div>',         |
+        # stock_product is storing only the value (0).                                         |
+        # --------------------------------------------------------------------------------------
+
         find_stock = product.find_all("div", class_="inventory")[0].contents[0]
         stock_product = find_stock.split(' ')[0]
 
-        # In the find_stock variable, storing all the data of cost class in DIV.
+        # -----------------------------------------------------------------------
+        # In the find_stock variable, storing all the data of cost class in DIV.|
+        # -----------------------------------------------------------------------
+
         value = product.find_all("div", class_="cost")[0].contents[0]
 
-        # Revenue variable store all the value between 0 and 1 in cost class and the value is '$'
+        # -----------------------------------------------------------------------------------------
+        # Revenue variable store all the value between 0 and 1 in cost class and the value is '$' |
+        # -----------------------------------------------------------------------------------------
+
         revenue = value[0:1]
 
-        # And for the product_cost variable, it store any value after the '$' and onwards.
+        # ---------------------------------------------------------------------------------
+        # And for the product_cost variable, it store any value after the '$' and onwards.|
+        # ---------------------------------------------------------------------------------
+
         product_cost = value[1:]
 
-        # Inserting these values into the database.
+        # -------------------------------------------
+        # Inserting these values into the database. |
+        # -------------------------------------------
+
         database.execute('''insert into products values(?,?,?,?,?)''',(product_id,product_description,stock_product,product_cost,revenue))
         database.commit()
+
 
 def report(db, openfile):
     """Generate a database report and store it in outfile
@@ -145,16 +184,26 @@ def report(db, openfile):
 
     database = db
 
-    # main_database storing all the data from the database by using database.execute
+    # --------------------------------------------------------------------------------
+    # main_database storing all the data from the database by using database.execute |
+    # --------------------------------------------------------------------------------
+
     main_database = database.execute('''SELECT products.description, products.price, products.currency, products.stock, locations.number||', '||locations.street||', '||locations.city||', '||locations.state As "location" FROM 'products' join 'locations' join 'relations' where relations.product = products.id and relations.location = locations.id order by products.price asc;''')
 
-    # writer_csv contains 'description', 'price', 'currency', 'stock' and 'location' in rows
+    # ----------------------------------------------------------------------------------------
+    # writer_csv contains 'description', 'price', 'currency', 'stock' and 'location' in rows |
+    # ----------------------------------------------------------------------------------------
+
     writer_csv = csv.writer(openfile)
     writer_csv.writerow(['description', 'price', 'currency', 'stock', 'location'])
 
-    # Writing all the values in a row one at a time.
+    # ------------------------------------------------
+    # Writing all the values in a row one at a time. |
+    # ------------------------------------------------
+
     for row_line in main_database:
         writer_csv.writerow(row_line)
+
 
 def main():
     """Execute the main code that calls all functions
@@ -166,21 +215,34 @@ def main():
     create_tables(db)
 
     # Write your code below
+
     database = db
 
-    # Calling relations.csv
+    # -----------------------
+    # Calling relations.csv |
+    # -----------------------
+
     with open('relations.csv') as f:
         read_relations(database, f)
 
-    # Calling locations.csv
+    # -----------------------
+    # Calling locations.csv |
+    # -----------------------
+
     with open('locations.csv') as f:
         read_locations(database,f)
 
-    # Parsing the HTML for stock value of products.
+    # -----------------------------------------------
+    # Parsing the HTML for stock value of products. |
+    # -----------------------------------------------
+
     with open('index.html', encoding='utf-8') as f:
         read_stock(database,f)
 
-    # Calling report.csv
+    # --------------------
+    # Calling report.csv |
+    # --------------------
+
     with open('report.csv', 'w') as f:
         report(database, open('report.csv','w'))
 
